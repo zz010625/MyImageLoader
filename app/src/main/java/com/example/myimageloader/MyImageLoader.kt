@@ -43,25 +43,20 @@ object MyImageLoader {
     }
 
     fun into(imageView: ImageView): MyImageLoader {
-        //先到内存获取
+        var bitmap: Bitmap?
         if (url != null) {
-            var bitmap = mCache?.get(url)
+            //先到内存获取
+            bitmap = getOnMemory(imageView)
             if (bitmap != null) {
-                // 直接从内存中获取图片来显示
-                imageView.setImageBitmap(bitmap)
-                //取到后初始化
-                isWriteToLocal = false
-                Log.d("zz", "内存中获取到了")
+                loadImage(imageView, bitmap)
                 return this
             }
             //内存中没找到 去本地获取
-            bitmap = loadBitmapFromLocal(url)
+            bitmap = getOnLocal(imageView)
             if (bitmap != null) {
-                // 从本地获取图片来显示
-                imageView.setImageBitmap(bitmap)
-                //取到后初始化
+                loadImage(imageView, bitmap)
+                //初始化
                 isWriteToLocal = false
-                Log.d("zz", "本地中获取到了")
                 return this
             }
             //内存和本地都没有 通过网络获取图片并加载 且可选择是否储存到内存/本地
@@ -71,9 +66,48 @@ object MyImageLoader {
     }
 
     /**
+     * 从内存获取
+     */
+    private fun getOnMemory(imageView: ImageView): Bitmap? {
+        val bitmap = mCache?.get(url)
+        if (bitmap != null) {
+            // 直接从内存中获取图片来显示
+            imageView.setImageBitmap(bitmap)
+            //取到后初始化
+            isWriteToLocal = false
+            Log.d("zz", "内存中获取到了")
+            return bitmap
+        }
+        return null
+    }
+
+    /**
+     * 从本地获取
+     */
+    private fun getOnLocal(imageView: ImageView): Bitmap? {
+        val bitmap: Bitmap? = loadBitmapFromLocal(url)
+        if (bitmap != null) {
+            // 从本地获取图片来显示
+            imageView.setImageBitmap(bitmap)
+            //取到后初始化
+            isWriteToLocal = false
+            Log.d("zz", "本地中获取到了")
+            return bitmap
+        }
+        return null
+    }
+
+    /**
+     * 加载图片
+     */
+    private fun loadImage(imageView: ImageView, bitmap: Bitmap) {
+        imageView.setImageBitmap(bitmap)
+    }
+
+
+    /**
      * 第一次加载图片时 可选择是否储存图片到本地
      */
-
     fun isWriteToLocal(): MyImageLoader {
         isWriteToLocal = true
         return this
@@ -91,7 +125,7 @@ object MyImageLoader {
             val code: Int = connection.responseCode
             if (200 == code) {
                 val inputStream: InputStream = connection.inputStream
-                var bitmap = BitmapFactory.decodeStream(inputStream)
+                val bitmap = BitmapFactory.decodeStream(inputStream)
                 //储存到内存
                 mCache?.put(url, bitmap)
                 //判断是否需要储存图片到本地
@@ -101,7 +135,7 @@ object MyImageLoader {
                 }
                 //主线程加载图片
                 activity.runOnUiThread {
-                    imageView.setImageBitmap(bitmap)
+                    loadImage(imageView, bitmap)
                     Log.d("zz", "通过网络请求获取到了")
                 }
             }
@@ -115,7 +149,7 @@ object MyImageLoader {
         try {
             val name = MD5Encoder.encode(url)
             val cacheDir = getCacheDir(name)
-            var bos: BufferedOutputStream? = BufferedOutputStream(FileOutputStream(cacheDir))
+            val bos: BufferedOutputStream? = BufferedOutputStream(FileOutputStream(cacheDir))
             bitmap.compress(Bitmap.CompressFormat.JPEG, 100, bos)
             bos?.flush()
             bos?.close()
