@@ -135,7 +135,7 @@ object MyImageLoader {
             val bitmap = BitmapFactory.decodeStream(bis)
             bis?.close()
             //储存到内存
-            mCache?.put(url,bitmap)
+            mCache?.put(url, bitmap)
             return bitmap
         } catch (e: Exception) {
             e.printStackTrace()
@@ -147,7 +147,7 @@ object MyImageLoader {
      * 获取图片储存位置
      */
     private fun getCacheDir(name: String): String? {
-        return activity.cacheDir.toString()+ "/$name.jpg"
+        return activity.cacheDir.toString() + "/$name.jpg"
     }
 }
 
