@@ -19,6 +19,8 @@ object MyImageLoader {
     private lateinit var activity: Activity
     private lateinit var url: String
     private var isWriteToLocal = false
+    private var mBitmap: Bitmap? = null
+    private var imageView: ImageView? = null
 
     init {
         // 设置最大使用的内存空间
@@ -39,42 +41,38 @@ object MyImageLoader {
 
     fun load(url: String): MyImageLoader {
         this.url = url
-        return this
-    }
-
-    fun into(imageView: ImageView): MyImageLoader {
-        var bitmap: Bitmap?
-        if (url != null) {
+        if (this.url != null) {
             //先到内存获取
-            bitmap = getOnMemory(imageView)
-            if (bitmap != null) {
-                loadImage(imageView, bitmap)
+            mBitmap = getOnMemory()
+            if (mBitmap != null) {
                 return this
             }
             //内存中没找到 去本地获取
-            bitmap = getOnLocal(imageView)
-            if (bitmap != null) {
-                loadImage(imageView, bitmap)
-                //初始化
-                isWriteToLocal = false
+            mBitmap = getOnLocal()
+            if (mBitmap != null) {
                 return this
             }
             //内存和本地都没有 通过网络获取图片并加载 且可选择是否储存到内存/本地
-            loadBitmapFromNet(url, activity, imageView)
+            loadBitmapFromNet(MyImageLoader.url, activity)
         }
         return this
+    }
+
+    fun into(imageView: ImageView?) {
+        this.imageView = imageView
+        if (mBitmap != null && this.imageView != null) {
+            imageView?.setImageBitmap(mBitmap)
+            //清空数据
+            empty()
+        }
     }
 
     /**
      * 从内存获取
      */
-    private fun getOnMemory(imageView: ImageView): Bitmap? {
+    private fun getOnMemory(): Bitmap? {
         val bitmap = mCache?.get(url)
         if (bitmap != null) {
-            // 直接从内存中获取图片来显示
-            imageView.setImageBitmap(bitmap)
-            //取到后初始化
-            isWriteToLocal = false
             Log.d("zz", "内存中获取到了")
             return bitmap
         }
@@ -84,26 +82,14 @@ object MyImageLoader {
     /**
      * 从本地获取
      */
-    private fun getOnLocal(imageView: ImageView): Bitmap? {
+    private fun getOnLocal(): Bitmap? {
         val bitmap: Bitmap? = loadBitmapFromLocal(url)
         if (bitmap != null) {
-            // 从本地获取图片来显示
-            imageView.setImageBitmap(bitmap)
-            //取到后初始化
-            isWriteToLocal = false
             Log.d("zz", "本地中获取到了")
             return bitmap
         }
         return null
     }
-
-    /**
-     * 加载图片
-     */
-    private fun loadImage(imageView: ImageView, bitmap: Bitmap) {
-        imageView.setImageBitmap(bitmap)
-    }
-
 
     /**
      * 第一次加载图片时 可选择是否储存图片到本地
@@ -116,7 +102,8 @@ object MyImageLoader {
     /**
      * 通过网络加载图片
      */
-    private fun loadBitmapFromNet(url: String, activity: Activity, imageView: ImageView) {
+    private fun loadBitmapFromNet(url: String, activity: Activity) {
+        var bitmap: Bitmap
         Thread {
             val connection: HttpURLConnection = URL(url).openConnection() as HttpURLConnection
             connection.connectTimeout = 30 * 1000
@@ -125,17 +112,17 @@ object MyImageLoader {
             val code: Int = connection.responseCode
             if (200 == code) {
                 val inputStream: InputStream = connection.inputStream
-                val bitmap = BitmapFactory.decodeStream(inputStream)
+                bitmap = BitmapFactory.decodeStream(inputStream)
                 //储存到内存
                 mCache?.put(url, bitmap)
                 //判断是否需要储存图片到本地
                 if (isWriteToLocal) {
                     writeToLocal(url, bitmap)
-                    isWriteToLocal = false
                 }
                 //主线程加载图片
                 activity.runOnUiThread {
-                    loadImage(imageView, bitmap)
+                    mBitmap = bitmap
+                    into(imageView)
                     Log.d("zz", "通过网络请求获取到了")
                 }
             }
@@ -183,8 +170,15 @@ object MyImageLoader {
     private fun getCacheDir(name: String): String? {
         return activity.cacheDir.toString() + "/$name.jpg"
     }
-}
 
+    /**
+     * 清空/初始化相关变量 保证下一次使用时不受原数据影响
+     */
+    private fun empty() {
+        isWriteToLocal = false
+        mBitmap = null
+    }
+}
 
 /**
  * 将图片url加密

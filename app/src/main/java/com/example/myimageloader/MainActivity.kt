@@ -11,6 +11,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
             var imageView: ImageView = findViewById(R.id.iv_test)
-            MyImageLoader.with(this).load("https://profile.csdnimg.cn/1/F/9/1_m0_52051799").into(imageView).isWriteToLocal()
+            MyImageLoader.isWriteToLocal().with(this).load("https://profile.csdnimg.cn/1/F/9/1_m0_52051799").into(imageView)
     }
 }
