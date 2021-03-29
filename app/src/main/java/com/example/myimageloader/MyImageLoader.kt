@@ -73,7 +73,6 @@ object MyImageLoader {
     private fun getOnMemory(): Bitmap? {
         val bitmap = mCache?.get(url)
         if (bitmap != null) {
-            Log.d("zz", "内存中获取到了")
             return bitmap
         }
         return null
@@ -85,7 +84,6 @@ object MyImageLoader {
     private fun getOnLocal(): Bitmap? {
         val bitmap: Bitmap? = loadBitmapFromLocal(url)
         if (bitmap != null) {
-            Log.d("zz", "本地中获取到了")
             return bitmap
         }
         return null
@@ -123,7 +121,6 @@ object MyImageLoader {
                 activity.runOnUiThread {
                     mBitmap = bitmap
                     into(imageView)
-                    Log.d("zz", "通过网络请求获取到了")
                 }
             }
         }.start()
