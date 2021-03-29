@@ -4,8 +4,14 @@
 
 
 MyImageLoader.isWriteToLocal() 若需将图片保存到本地则先调用该方法 无需保存本地可不调用 默认不保存到本地
+
+
 MyImageLoader.with(activity) 传入this/XXActivity.this
+
+
 MyImageLoader.load(picUrl) 传入字符串图片链接
+
+
 MyImageLoader.into(view) 传入展示图片的View
 
 
